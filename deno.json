@@ -11,7 +11,27 @@
   },
   "compilerOptions": {
     "allowJs": true,
-    "lib": ["deno.window", "dom"],
+    "lib": ["deno.window", "deno.ns", "dom"],
     "strict": true
+  },
+  "fmt": {
+    "files": {
+      "include": ["server/"]
+    },
+    "options": {
+      "useTabs": false,
+      "lineWidth": 80,
+      "indentWidth": 2,
+      "singleQuote": true,
+      "proseWrap": "preserve"
+    }
+  },
+  "lint": {
+    "files": {
+      "include": ["server/"]
+    },
+    "rules": {
+      "tags": ["recommended"]
+    }
   }
 } 

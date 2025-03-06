@@ -1,9 +1,16 @@
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { serve } from "http/server.ts";
 import { WebSocketClient } from "./websocket/client.ts";
 
-// @ts-ignore: Deno types
+// 添加调试日志
+console.log("Starting server...");
+console.log("Environment variables:", Deno.env.toObject());
+
+// 获取API密钥
 const API_KEY = Deno.env.get("ZHIPU_API_KEY");
+console.log("API_KEY status:", API_KEY ? "Found" : "Not found");
+
 if (!API_KEY) {
+  console.error("ZHIPU_API_KEY environment variable is required");
   throw new Error("ZHIPU_API_KEY environment variable is required");
 }
 
@@ -42,12 +49,16 @@ async function handleWebSocket(ws: WebSocket) {
 }
 
 // HTTP服务器
+const port = parseInt(Deno.env.get("PORT") || "8000");
+console.log(`Starting HTTP server on port ${port}...`);
+
 serve(async (req) => {
   const url = new URL(req.url);
+  console.log(`Received ${req.method} request to ${url.pathname}`);
   
   // WebSocket升级请求处理
   if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
-    // @ts-ignore: Deno types
+    console.log("Handling WebSocket upgrade request");
     const { socket, response } = Deno.upgradeWebSocket(req);
     handleWebSocket(socket);
     return response;
@@ -58,13 +69,20 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       status: "ok",
       connections: wsConnections.size,
+      apiKeySet: !!API_KEY,
     }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
     });
   }
 
   // 默认响应
   return new Response("GLM-Realtime Server", {
-    headers: { "Content-Type": "text/plain" },
+    headers: { 
+      "Content-Type": "text/plain",
+      "Access-Control-Allow-Origin": "*",
+    },
   });
-}, { port: 8000 }); 
+}, { port }); 
