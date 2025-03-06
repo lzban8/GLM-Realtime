@@ -5,26 +5,77 @@
     <link rel="icon" type="image/svg+xml" href="/app/realtime-2a7e23b3.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GLM-Realtime</title>
+    <style>
+      #debug-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        z-index: 9999;
+        font-family: monospace;
+      }
+      .error-message {
+        color: red;
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid red;
+        background: #fff;
+      }
+    </style>
     <script>
+      window.errors = [];
       window.onerror = function(msg, url, line, col, error) {
-        console.error('Error: ' + msg + '\nurl: ' + url + '\nline: ' + line);
-        document.body.innerHTML += '<div style="color: red; padding: 20px;">Error: ' + msg + '<br>url: ' + url + '<br>line: ' + line + '</div>';
+        console.error('Error:', msg, '\nurl:', url, '\nline:', line);
+        const errorInfo = { msg, url, line, col, stack: error?.stack };
+        window.errors.push(errorInfo);
+        updateDebugInfo();
         return false;
       };
+
+      // 捕获未处理的Promise错误
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled Promise Rejection:', event.reason);
+        window.errors.push({
+          msg: 'Unhandled Promise Rejection',
+          detail: event.reason?.message || event.reason,
+          stack: event.reason?.stack
+        });
+        updateDebugInfo();
+      });
+
+      function updateDebugInfo() {
+        const debugContainer = document.getElementById('debug-container');
+        if (!debugContainer) return;
+
+        let html = '<div>Path: ' + window.location.pathname + '</div>';
+        html += '<div>Time: ' + new Date().toISOString() + '</div>';
+        
+        if (window.errors.length > 0) {
+          html += '<div style="margin-top: 10px;"><strong>Errors:</strong></div>';
+          window.errors.forEach((error, index) => {
+            html += `<div class="error-message">
+              <div>Error ${index + 1}:</div>
+              <div>Message: ${error.msg}</div>
+              <div>Location: ${error.url}:${error.line}</div>
+              ${error.stack ? `<pre>${error.stack}</pre>` : ''}
+            </div>`;
+          });
+        }
+
+        debugContainer.innerHTML = html;
+      }
+
+      // 定期更新调试信息
+      setInterval(updateDebugInfo, 1000);
     </script>
   </head>
   <body>
-    <div id="app">
-      <!-- 添加一个加载提示 -->
-      <div style="padding: 20px;">
-        Loading...
-        <div id="debug-info" style="color: gray; font-size: 12px;"></div>
-      </div>
+    <div id="debug-container">
+      Loading...
     </div>
-    <script>
-      // 添加调试信息
-      document.getElementById('debug-info').innerHTML = 'Current path: ' + window.location.pathname;
-    </script>
+    <div id="app"></div>
     <script type="module" src="/app/index-b217dc70.js"></script>
     <link rel="stylesheet" href="/app/index-6c76d44e.css">
   </body>
