@@ -1,0 +1,17 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --watch server/main.ts",
+    "start": "deno run --allow-net --allow-env server/main.ts"
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.208.0/",
+    "@/": "./",
+    "server/": "./server/",
+    "shared/": "./shared/"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window", "dom"],
+    "strict": true
+  }
+} 
