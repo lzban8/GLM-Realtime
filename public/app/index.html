@@ -173,20 +173,71 @@
         // 重新加载应用
         window.__DEBUG__.reloadApp = function() {
           const app = document.getElementById('app');
-          if (app && window.Vue?.createApp) {
-            app.innerHTML = '';
-            log('reload-app', 'Attempting to reload Vue app');
-            try {
-              const newApp = window.Vue.createApp({
-                template: '<div>Test App</div>'
-              });
-              newApp.mount('#app');
-              log('reload-app', 'Test app mounted successfully');
-            } catch (e) {
-              log('reload-app-error', e);
+          log('reload-app', {
+            hasApp: !!app,
+            hasVueGlobal: typeof window.Vue !== 'undefined',
+            hasCreateApp: typeof window.Vue?.createApp === 'function',
+            vueVersion: window.Vue?.version
+          });
+          
+          if (!app) {
+            log('reload-app-error', 'App element not found');
+            return;
+          }
+          
+          if (!window.Vue) {
+            log('reload-app-error', 'Vue is not loaded');
+            // 尝试重新加载Vue
+            const vueScript = document.querySelector('script[src*="vue-"]');
+            if (vueScript) {
+              log('reload-app', 'Attempting to reload Vue script');
+              const newScript = document.createElement('script');
+              newScript.type = 'module';
+              newScript.src = vueScript.src;
+              newScript.onload = () => {
+                log('reload-app', 'Vue script reloaded, attempting to mount app');
+                window.__DEBUG__.reloadApp();
+              };
+              newScript.onerror = (e) => log('reload-app-error', 'Failed to reload Vue script', e);
+              document.head.appendChild(newScript);
             }
-          } else {
-            log('reload-app-error', 'Vue or app element not available');
+            return;
+          }
+          
+          if (!window.Vue.createApp) {
+            log('reload-app-error', 'Vue.createApp is not available');
+            return;
+          }
+
+          try {
+            app.innerHTML = '';
+            const testComponent = {
+              template: `
+                <div class="test-app">
+                  <h1>测试应用</h1>
+                  <p>Vue版本: {{ vueVersion }}</p>
+                  <button @click="increment">点击计数: {{ count }}</button>
+                </div>
+              `,
+              data() {
+                return {
+                  count: 0,
+                  vueVersion: window.Vue.version
+                }
+              },
+              methods: {
+                increment() {
+                  this.count++
+                }
+              }
+            };
+            
+            log('reload-app', 'Creating test app with component', testComponent);
+            const newApp = window.Vue.createApp(testComponent);
+            newApp.mount('#app');
+            log('reload-app', 'Test app mounted successfully');
+          } catch (e) {
+            log('reload-app-error', 'Error mounting app:', e.message, e.stack);
           }
         };
 
