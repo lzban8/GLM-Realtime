@@ -5,14 +5,214 @@
     <link rel="icon" type="image/svg+xml" href="/app/realtime-2a7e23b3.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GLM-Realtime</title>
-    <script type="module" crossorigin src="/app/index-c5dd9a53.js"></script>
-    <link rel="modulepreload" crossorigin href="/app/vue-2b357e6a.js">
-    <link rel="modulepreload" crossorigin href="/app/wavesurfer-71c23100.js">
-    <link rel="modulepreload" crossorigin href="/app/element-plus-da50bf89.js">
     <link rel="stylesheet" href="/app/index-0503ceb5.css">
+    <style>
+      #debug-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        z-index: 9999;
+        font-family: monospace;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .debug-button {
+        margin: 5px;
+        padding: 5px 10px;
+        background: #eee;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
+      .script-status {
+        margin: 5px 0;
+        padding: 5px;
+        border: 1px solid #ccc;
+      }
+      .script-status.error {
+        border-color: red;
+        background: #fee;
+      }
+      .script-status.success {
+        border-color: green;
+        background: #efe;
+      }
+    </style>
   </head>
   <body>
+    <div id="debug-container">Loading debug info...</div>
     <div id="app"></div>
+
+    <script>
+      (function() {
+        console.log('Debug script starting...');
+        
+        // 初始化状态
+        window.__DEBUG__ = {
+          scriptStatus: {},
+          errors: [],
+          logs: []
+        };
+
+        function log(type, ...args) {
+          const time = new Date().toISOString();
+          window.__DEBUG__.logs.push({ type, time, args });
+          console.log(`[${type}]`, ...args);
+          updateDebugInfo();
+        }
+
+        // 错误处理
+        window.onerror = function(msg, url, line, col, error) {
+          const errorInfo = { msg, url, line, col, stack: error?.stack };
+          window.__DEBUG__.errors.push(errorInfo);
+          log('error', errorInfo);
+          return false;
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+          const errorInfo = {
+            msg: 'Unhandled Promise Rejection',
+            detail: event.reason?.message || event.reason,
+            stack: event.reason?.stack
+          };
+          window.__DEBUG__.errors.push(errorInfo);
+          log('promise-error', errorInfo);
+        });
+
+        // 监控Vue挂载
+        const originalDefineProperty = Object.defineProperty;
+        Object.defineProperty = function(obj, prop, descriptor) {
+          if (prop === '__vue_app__') {
+            log('vue-mount', 'Vue app mounting');
+          }
+          return originalDefineProperty.call(this, obj, prop, descriptor);
+        };
+
+        // 更新调试信息
+        function updateDebugInfo() {
+          const container = document.getElementById('debug-container');
+          if (!container) return;
+
+          const scripts = Array.from(document.scripts).map(script => ({
+            src: script.src || 'inline',
+            type: script.type || 'default',
+            status: window.__DEBUG__.scriptStatus[script.src] || 'pending'
+          }));
+
+          const vueInfo = {
+            Vue: typeof window.Vue !== 'undefined',
+            createApp: typeof window.Vue?.createApp === 'function',
+            version: window.Vue?.version,
+            appReady: window.__VUE_APP_READY,
+            appElement: document.getElementById('app'),
+            appContent: document.getElementById('app')?.innerHTML || 'empty'
+          };
+
+          container.innerHTML = `
+            <div style="margin-bottom: 10px;">
+              <div>Path: ${window.location.pathname}</div>
+              <div>Time: ${new Date().toISOString()}</div>
+              <div>Vue Status:</div>
+              <pre>${JSON.stringify(vueInfo, null, 2)}</pre>
+              <div>
+                <button class="debug-button" onclick="location.reload(true)">Hard Reload</button>
+                <button class="debug-button" onclick="window.__DEBUG__.checkScripts()">Check Scripts</button>
+                <button class="debug-button" onclick="window.__DEBUG__.reloadApp()">Reload App</button>
+              </div>
+            </div>
+            <div style="margin: 10px 0;">
+              <strong>Scripts:</strong>
+              ${scripts.map(script => `
+                <div class="script-status ${script.status === 'error' ? 'error' : script.status === 'loaded' ? 'success' : ''}">
+                  ${script.src} - ${script.type} (${script.status})
+                </div>
+              `).join('')}
+            </div>
+            ${window.__DEBUG__.errors.length > 0 ? `
+              <div style="margin: 10px 0;">
+                <strong>Errors (${window.__DEBUG__.errors.length}):</strong>
+                ${window.__DEBUG__.errors.map(error => `
+                  <div class="script-status error">
+                    <div>Message: ${error.msg}</div>
+                    ${error.url ? `<div>URL: ${error.url}:${error.line}</div>` : ''}
+                    ${error.stack ? `<pre>${error.stack}</pre>` : ''}
+                    ${error.detail ? `<div>Detail: ${error.detail}</div>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+            <div style="margin: 10px 0;">
+              <strong>Logs:</strong>
+              <pre>${window.__DEBUG__.logs.map(log => 
+                `[${log.time}] [${log.type}] ${JSON.stringify(log.args)}`
+              ).join('\n')}</pre>
+            </div>
+          `;
+        }
+
+        // 检查脚本状态
+        window.__DEBUG__.checkScripts = function() {
+          const scripts = Array.from(document.scripts);
+          scripts.forEach(script => {
+            if (!script.src) return;
+            fetch(script.src)
+              .then(response => {
+                window.__DEBUG__.scriptStatus[script.src] = response.ok ? 'loaded' : 'error';
+                updateDebugInfo();
+              })
+              .catch(error => {
+                window.__DEBUG__.scriptStatus[script.src] = 'error';
+                log('script-error', { src: script.src, error: error.message });
+                updateDebugInfo();
+              });
+          });
+        };
+
+        // 重新加载应用
+        window.__DEBUG__.reloadApp = function() {
+          const app = document.getElementById('app');
+          if (app && window.Vue?.createApp) {
+            app.innerHTML = '';
+            log('reload-app', 'Attempting to reload Vue app');
+            try {
+              const newApp = window.Vue.createApp({
+                template: '<div>Test App</div>'
+              });
+              newApp.mount('#app');
+              log('reload-app', 'Test app mounted successfully');
+            } catch (e) {
+              log('reload-app-error', e);
+            }
+          } else {
+            log('reload-app-error', 'Vue or app element not available');
+          }
+        };
+
+        // 初始化完成
+        log('init', 'Debug system initialized');
+        
+        // 定期更新
+        setInterval(updateDebugInfo, 1000);
+      })();
+    </script>
+
+    <!-- 按顺序加载脚本 -->
+    <script type="module" src="/app/vue-2b357e6a.js" 
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Vue loaded']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Vue failed to load']});"></script>
     
+    <script type="module" src="/app/element-plus-da50bf89.js"
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Element Plus loaded']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Element Plus failed to load']});"></script>
+    
+    <script type="module" src="/app/wavesurfer-71c23100.js"
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Wavesurfer loaded']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Wavesurfer failed to load']});"></script>
+    
+    <script type="module" src="/app/index-c5dd9a53.js"
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Main app loaded']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Main app failed to load']});"></script>
   </body>
 </html> 
