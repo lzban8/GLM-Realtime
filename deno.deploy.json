@@ -1,0 +1,7 @@
+{
+  "entrypoint": "server/main.ts",
+  "exclude": [
+    "**/node_modules",
+    "**/.git"
+  ]
+} 
