@@ -5,14 +5,99 @@
     <link rel="icon" type="image/svg+xml" href="/app/realtime-2a7e23b3.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GLM-Realtime</title>
-    <script type="module" crossorigin src="/app/index-2b90ea68.js"></script>
-    <link rel="modulepreload" crossorigin href="/app/vue-2b357e6a.js">
-    <link rel="modulepreload" crossorigin href="/app/wavesurfer-71c23100.js">
-    <link rel="modulepreload" crossorigin href="/app/element-plus-da50bf89.js">
-    <link rel="stylesheet" href="/app/index-0503ceb5.css">
+    <script>
+      console.log('Debug script starting...');
+      
+      // 创建调试容器
+      document.addEventListener('DOMContentLoaded', function() {
+        const debugContainer = document.createElement('div');
+        debugContainer.id = 'debug-container';
+        debugContainer.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          padding: 20px;
+          background: rgba(255, 255, 255, 0.95);
+          z-index: 9999;
+          font-family: monospace;
+          max-height: 80vh;
+          overflow-y: auto;
+        `;
+        document.body.insertBefore(debugContainer, document.body.firstChild);
+        
+        // 添加基本信息
+        debugContainer.innerHTML = `
+          <div>Path: ${window.location.pathname}</div>
+          <div>Time: ${new Date().toISOString()}</div>
+          <div>Scripts:</div>
+          <ul>
+            ${Array.from(document.scripts).map(script => 
+              `<li>${script.src || 'inline'} - ${script.type || 'default'}</li>`
+            ).join('')}
+          </ul>
+        `;
+      });
+
+      // 监控脚本加载
+      const originalCreateElement = document.createElement.bind(document);
+      document.createElement = function(tagName) {
+        const element = originalCreateElement(tagName);
+        if (tagName.toLowerCase() === 'script') {
+          element.addEventListener('load', function() {
+            console.log('Script loaded:', this.src);
+            updateDebugInfo();
+          });
+          element.addEventListener('error', function(e) {
+            console.error('Script error:', this.src, e);
+            updateDebugInfo();
+          });
+        }
+        return element;
+      };
+
+      // 更新调试信息
+      function updateDebugInfo() {
+        const debugContainer = document.getElementById('debug-container');
+        if (!debugContainer) return;
+
+        const scripts = Array.from(document.scripts).map(script => ({
+          src: script.src || 'inline',
+          type: script.type || 'default',
+          status: script.getAttribute('data-loaded') || 'unknown'
+        }));
+
+        debugContainer.innerHTML = `
+          <div style="margin-bottom: 10px;">
+            <div>Path: ${window.location.pathname}</div>
+            <div>Time: ${new Date().toISOString()}</div>
+            <div>Vue Global: ${typeof window.Vue !== 'undefined' ? 'Available' : 'Not Available'}</div>
+            <div>App Element: ${document.getElementById('app') ? 'Found' : 'Not Found'}</div>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <strong>Scripts:</strong>
+            <ul style="margin: 5px 0;">
+              ${scripts.map(script => 
+                `<li>${script.src} - ${script.type} (${script.status})</li>`
+              ).join('')}
+            </ul>
+          </div>
+          <div>
+            <button onclick="location.reload(true)" style="margin: 5px; padding: 5px 10px;">Hard Reload</button>
+          </div>
+        `;
+      }
+
+      // 初始化完成
+      console.log('Debug script initialized');
+    </script>
   </head>
   <body>
     <div id="app"></div>
-    
+    <script type="module" src="/app/vue-2b357e6a.js"></script>
+    <script type="module" src="/app/element-plus-da50bf89.js"></script>
+    <script type="module" src="/app/wavesurfer-71c23100.js"></script>
+    <script type="module" src="/app/index-2b90ea68.js"></script>
+    <link rel="stylesheet" href="/app/index-0503ceb5.css">
   </body>
 </html> 
