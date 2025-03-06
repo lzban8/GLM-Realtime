@@ -55,18 +55,25 @@ console.log(`Starting HTTP server on port ${port}...`);
 
 serve(async (req) => {
   const url = new URL(req.url);
-  console.log(`Received ${req.method} request to ${url.pathname}`);
+  const pathname = url.pathname;
+  
+  console.log(`[DEBUG] Received request:`, {
+    method: req.method,
+    pathname,
+    headers: Object.fromEntries(req.headers.entries()),
+  });
   
   // WebSocket升级请求处理
   if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
-    console.log("Handling WebSocket upgrade request");
+    console.log("[DEBUG] Handling WebSocket upgrade request");
     const { socket, response } = Deno.upgradeWebSocket(req);
     handleWebSocket(socket);
     return response;
   }
 
   // 健康检查端点
-  if (url.pathname === "/health") {
+  if (pathname === "/health") {
+    console.log("[DEBUG] Handling health check request");
     return new Response(JSON.stringify({
       status: "ok",
       connections: wsConnections.size,
@@ -80,18 +87,49 @@ serve(async (req) => {
   }
 
   // 处理根路径重定向
-  if (url.pathname === "/") {
+  if (pathname === "/") {
+    console.log("[DEBUG] Redirecting root path to /app/");
     return Response.redirect(`${url.origin}/app/`, 301);
   }
 
-  // 处理所有静态文件请求
-  return await serveDir(req, {
-    fsRoot: "public",
-    urlRoot: "",
-    showDirListing: false,
-    enableCors: true,
-    quiet: false, // 启用日志输出
-  });
+  // 处理/app路径
+  if (pathname === "/app" || pathname === "/app/") {
+    console.log("[DEBUG] Serving app index.html");
+    try {
+      const indexHtml = await Deno.readFile("public/app/index.html");
+      return new Response(indexHtml, {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
+    } catch (e) {
+      console.error("[ERROR] Failed to read index.html:", e);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  }
+
+  // 处理静态资源
+  console.log("[DEBUG] Attempting to serve static file:", pathname);
+  try {
+    const response = await serveDir(req, {
+      fsRoot: "public",
+      urlRoot: "",
+      showDirListing: false,
+      enableCors: true,
+      quiet: false,
+    });
+    
+    if (response.status === 404) {
+      console.log("[DEBUG] File not found:", pathname);
+    } else {
+      console.log("[DEBUG] Successfully served file:", pathname);
+    }
+    
+    return response;
+  } catch (e) {
+    console.error("[ERROR] Failed to serve static file:", pathname, e);
+    return new Response("Internal Server Error", { status: 500 });
+  }
 }, { port });
 
 // 获取文件的Content-Type
