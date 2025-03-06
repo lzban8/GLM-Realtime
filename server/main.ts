@@ -86,6 +86,30 @@ serve(async (req) => {
     });
   }
 
+  // API KEY 认证端点
+  if (pathname === "/api/auth") {
+    console.log("[DEBUG] Handling auth request");
+    if (!API_KEY) {
+      return new Response(JSON.stringify({
+        error: "API KEY not configured"
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        }
+      });
+    }
+    return new Response(JSON.stringify({
+      apiKey: API_KEY
+    }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      }
+    });
+  }
+
   // 处理根路径重定向
   if (pathname === "/") {
     console.log("[DEBUG] Redirecting root path to /app/");

@@ -160,39 +160,55 @@ export default {
       this.isConnecting = true;
       this.isConnected = false;
 
-      // 使用服务器端的 WebSocket endpoint
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const url = `${protocol}//${window.location.host}/ws`;
-      
-      // 创建 WebSocket 连接
-      this.sock = new WebSocket(url);
+      // 首先从服务器获取 API KEY
+      fetch('/api/auth')
+        .then(response => response.json())
+        .then(data => {
+          if (!data.apiKey) {
+            throw new Error('API KEY not found');
+          }
 
-      // 监听连接打开事件
-      this.sock.onopen = () => {
-        this.isConnecting = false;
-        this.isConnected = true;
-        this.isShowToolBar = true; // 显示工具栏
-        console.log("%c Connection opened", "color: #ff59ff");
-      };
-      // 监听收到消息事件
-      this.sock.onmessage = (e) => {
-        // console.log('%c 收到消息：', 'color: #ff59ff', e.data)
-        this.handleWsResponse(e.data, mediaType); // 处理返回消息
-      };
-      // 监听连接关闭事件
-      this.sock.onclose = () => {
-        this.isConnected = false;
-        this.currentAudioBlob = null;
-        this.currentVideoBlob = null;
-        console.log("%c Connection closed", "color: #ff59ff");
-      };
-      // 监听连接错误事件
-      this.sock.onerror = (e) => {
-        this.isConnecting = false;
-        this.isConnected = false;
-        this.$message.error("连接出错！");
-        console.log("%c Connection onerror", "color: #ff59ff");
-      };
+          // 使用智谱 AI 的 WebSocket endpoint，并在 URL 中添加认证信息
+          const url = `wss://open.bigmodel.cn/api/paas/v4/realtime?Authorization=${data.apiKey}`;
+          
+          // 创建 WebSocket 连接
+          this.sock = new WebSocket(url);
+
+          // 监听连接打开事件
+          this.sock.onopen = () => {
+            this.isConnecting = false;
+            this.isConnected = true;
+            this.isShowToolBar = true; // 显示工具栏
+            console.log("%c Connection opened", "color: #ff59ff");
+          };
+
+          // 监听收到消息事件
+          this.sock.onmessage = (e) => {
+            // console.log('%c 收到消息：', 'color: #ff59ff', e.data)
+            this.handleWsResponse(e.data, mediaType); // 处理返回消息
+          };
+
+          // 监听连接关闭事件
+          this.sock.onclose = () => {
+            this.isConnected = false;
+            this.currentAudioBlob = null;
+            this.currentVideoBlob = null;
+            console.log("%c Connection closed", "color: #ff59ff");
+          };
+
+          // 监听连接错误事件
+          this.sock.onerror = (e) => {
+            this.isConnecting = false;
+            this.isConnected = false;
+            this.$message.error("连接出错！");
+            console.log("%c Connection onerror", "color: #ff59ff");
+          };
+        })
+        .catch(error => {
+          this.isConnecting = false;
+          this.$message.error("获取认证信息失败：" + error.message);
+          console.error("Auth error:", error);
+        });
     },
     // 断开websocket连接
     closeWS() {
