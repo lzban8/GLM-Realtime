@@ -15,6 +15,8 @@
         background: rgba(255, 255, 255, 0.95);
         z-index: 9999;
         font-family: monospace;
+        max-height: 80vh;
+        overflow-y: auto;
       }
       .error-message {
         color: red;
@@ -23,60 +25,120 @@
         border: 1px solid red;
         background: #fff;
       }
+      .debug-section {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
     </style>
     <script>
       window.errors = [];
+      window.debugLogs = [];
+
+      function log(type, ...args) {
+        const time = new Date().toISOString();
+        window.debugLogs.push({ type, time, args });
+        console.log(`[${type}]`, ...args);
+        updateDebugInfo();
+      }
+
       window.onerror = function(msg, url, line, col, error) {
         console.error('Error:', msg, '\nurl:', url, '\nline:', line);
         const errorInfo = { msg, url, line, col, stack: error?.stack };
         window.errors.push(errorInfo);
-        updateDebugInfo();
+        log('error', errorInfo);
         return false;
       };
 
-      // 捕获未处理的Promise错误
       window.addEventListener('unhandledrejection', function(event) {
         console.error('Unhandled Promise Rejection:', event.reason);
-        window.errors.push({
+        const errorInfo = {
           msg: 'Unhandled Promise Rejection',
           detail: event.reason?.message || event.reason,
           stack: event.reason?.stack
-        });
-        updateDebugInfo();
+        };
+        window.errors.push(errorInfo);
+        log('promise-error', errorInfo);
       });
 
       function updateDebugInfo() {
         const debugContainer = document.getElementById('debug-container');
         if (!debugContainer) return;
 
-        let html = '<div>Path: ' + window.location.pathname + '</div>';
-        html += '<div>Time: ' + new Date().toISOString() + '</div>';
+        let html = `
+          <div class="debug-section">
+            <div>Path: ${window.location.pathname}</div>
+            <div>Time: ${new Date().toISOString()}</div>
+            <div>Vue Ready: ${window.__VUE_APP_READY ? 'Yes' : 'No'}</div>
+            <div>App Element: ${document.getElementById('app') ? 'Found' : 'Not Found'}</div>
+            <div>Scripts Loaded:</div>
+            <ul>
+              ${Array.from(document.scripts).map(script => 
+                `<li>${script.src || 'inline'} - ${script.type || 'default'}</li>`
+              ).join('')}
+            </ul>
+          </div>
+        `;
         
         if (window.errors.length > 0) {
-          html += '<div style="margin-top: 10px;"><strong>Errors:</strong></div>';
-          window.errors.forEach((error, index) => {
-            html += `<div class="error-message">
-              <div>Error ${index + 1}:</div>
-              <div>Message: ${error.msg}</div>
-              <div>Location: ${error.url}:${error.line}</div>
-              ${error.stack ? `<pre>${error.stack}</pre>` : ''}
-            </div>`;
-          });
+          html += `
+            <div class="debug-section">
+              <strong>Errors (${window.errors.length}):</strong>
+              ${window.errors.map((error, index) => `
+                <div class="error-message">
+                  <div>Error ${index + 1}:</div>
+                  <div>Message: ${error.msg}</div>
+                  <div>Location: ${error.url}:${error.line}</div>
+                  ${error.stack ? `<pre>${error.stack}</pre>` : ''}
+                  ${error.detail ? `<div>Detail: ${error.detail}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        if (window.debugLogs.length > 0) {
+          html += `
+            <div class="debug-section">
+              <strong>Debug Logs (${window.debugLogs.length}):</strong>
+              <pre>${window.debugLogs.map(log => 
+                `[${log.time}] [${log.type}] ${JSON.stringify(log.args)}`
+              ).join('\n')}</pre>
+            </div>
+          `;
         }
 
         debugContainer.innerHTML = html;
       }
 
+      // 监听Vue应用就绪状态
+      Object.defineProperty(window, '__VUE_APP_READY', {
+        set(value) {
+          this._vueReady = value;
+          log('vue-ready', value);
+          updateDebugInfo();
+        },
+        get() {
+          return this._vueReady;
+        }
+      });
+
       // 定期更新调试信息
       setInterval(updateDebugInfo, 1000);
+
+      // 记录初始化完成
+      log('init', 'Debug system initialized');
     </script>
   </head>
   <body>
     <div id="debug-container">
-      Loading...
+      Initializing...
     </div>
     <div id="app"></div>
-    <script type="module" src="/app/index-b217dc70.js"></script>
-    <link rel="stylesheet" href="/app/index-6c76d44e.css">
+    <script>
+      log('pre-load', 'Starting to load main script');
+    </script>
+    <script type="module" src="/app/index-b217dc70.js" onerror="log('script-error', 'Failed to load main script')" onload="log('script-loaded', 'Main script loaded successfully')"></script>
+    <link rel="stylesheet" href="/app/index-6c76d44e.css" onerror="log('css-error', 'Failed to load stylesheet')" onload="log('css-loaded', 'Stylesheet loaded successfully')">
   </body>
 </html> 
