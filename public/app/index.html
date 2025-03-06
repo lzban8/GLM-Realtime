@@ -30,6 +30,13 @@
         padding: 10px;
         border: 1px solid #ccc;
       }
+      .debug-button {
+        margin: 5px;
+        padding: 5px 10px;
+        background: #eee;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
     </style>
     <script>
       window.errors = [];
@@ -61,6 +68,46 @@
         log('promise-error', errorInfo);
       });
 
+      function inspectVue() {
+        try {
+          const app = document.getElementById('app');
+          const vueInstance = app.__vue_app__;
+          log('vue-inspect', {
+            hasVueInstance: !!vueInstance,
+            appElement: {
+              innerHTML: app.innerHTML,
+              childNodes: app.childNodes.length,
+              attributes: Array.from(app.attributes || []).map(attr => `${attr.name}=${attr.value}`),
+            },
+            vueGlobals: {
+              Vue: !!window.Vue,
+              createApp: !!window.createApp,
+              defineComponent: !!window.defineComponent,
+            },
+            windowKeys: Object.keys(window).filter(key => key.toLowerCase().includes('vue')),
+          });
+        } catch (e) {
+          log('vue-inspect-error', e);
+        }
+      }
+
+      function checkModules() {
+        try {
+          log('modules-check', {
+            moduleScripts: Array.from(document.querySelectorAll('script[type="module"]')).map(script => ({
+              src: script.src,
+              async: script.async,
+              defer: script.defer,
+              crossOrigin: script.crossOrigin,
+            })),
+            importMeta: !!window.import,
+            moduleSupport: 'noModule' in document.createElement('script'),
+          });
+        } catch (e) {
+          log('modules-check-error', e);
+        }
+      }
+
       function updateDebugInfo() {
         const debugContainer = document.getElementById('debug-container');
         if (!debugContainer) return;
@@ -71,6 +118,11 @@
             <div>Time: ${new Date().toISOString()}</div>
             <div>Vue Ready: ${window.__VUE_APP_READY ? 'Yes' : 'No'}</div>
             <div>App Element: ${document.getElementById('app') ? 'Found' : 'Not Found'}</div>
+            <div>
+              <button class="debug-button" onclick="inspectVue()">Inspect Vue</button>
+              <button class="debug-button" onclick="checkModules()">Check Modules</button>
+              <button class="debug-button" onclick="window.location.reload(true)">Hard Reload</button>
+            </div>
             <div>Scripts Loaded:</div>
             <ul>
               ${Array.from(document.scripts).map(script => 
