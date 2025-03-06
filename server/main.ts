@@ -79,7 +79,27 @@ serve(async (req) => {
     });
   }
 
-  // 静态文件服务
+  // 处理/app路径的请求
+  if (url.pathname === "/app" || url.pathname === "/app/") {
+    return serveDir(req, {
+      fsRoot: "public/app",
+      urlRoot: "app",
+      showDirListing: true,
+      enableCors: true,
+    });
+  }
+
+  // 处理/app/assets路径的请求
+  if (url.pathname.startsWith("/assets/")) {
+    return serveDir(req, {
+      fsRoot: "public/app",
+      urlRoot: "",
+      showDirListing: true,
+      enableCors: true,
+    });
+  }
+
+  // 其他静态文件请求
   return serveDir(req, {
     fsRoot: "public",
     urlRoot: "",
