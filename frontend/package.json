@@ -1,0 +1,27 @@
+{
+  "name": "glm-realtime-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "element-plus": "^2.9.4",
+    "lodash-es": "^4.17.21",
+    "mitt": "^3.0.1",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4",
+    "wavesurfer.js": "^7.9.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "less": "^4.1.3",
+    "vite": "^4.4.9"
+  },
+  "engines": {
+    "node": "18.x || 20.x"
+  }
+}

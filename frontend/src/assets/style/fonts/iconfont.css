@@ -1,0 +1,140 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 4834192 */
+  src: url('iconfont.woff2?t=1740104982886') format('woff2'),
+       url('iconfont.woff?t=1740104982886') format('woff'),
+       url('iconfont.ttf?t=1740104982886') format('truetype'),
+       url('iconfont.svg?t=1740104982886#iconfont') format('svg');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-arrow-down:before {
+  content: "\e628";
+}
+
+.icon-pause:before {
+  content: "\e800";
+}
+
+.icon-knowledge:before {
+  content: "\e6a9";
+}
+
+.icon-up_files:before {
+  content: "\e754";
+}
+
+.icon-image:before {
+  content: "\e762";
+}
+
+.icon-video:before {
+  content: "\e75a";
+}
+
+.icon-refresh11:before {
+  content: "\e73c";
+}
+
+.icon-camera_closed:before {
+  content: "\e764";
+}
+
+.icon-info1:before {
+  content: "\e765";
+}
+
+.icon-download:before {
+  content: "\e766";
+}
+
+.icon-microphone_closed:before {
+  content: "\e767";
+}
+
+.icon-clear:before {
+  content: "\e768";
+}
+
+.icon-copy:before {
+  content: "\e769";
+}
+
+.icon-voice:before {
+  content: "\e775";
+}
+
+.icon-audio:before {
+  content: "\e774";
+}
+
+.icon-error1:before {
+  content: "\e77f";
+}
+
+.icon-voice1:before {
+  content: "\e784";
+}
+
+.icon-attachment:before {
+  content: "\e783";
+}
+
+.icon-voicecall:before {
+  content: "\e78e";
+}
+
+.icon-videocall:before {
+  content: "\e78d";
+}
+
+.icon-share1:before {
+  content: "\e78b";
+}
+
+.icon-video1:before {
+  content: "\e78c";
+}
+
+.icon-sharecall:before {
+  content: "\e78a";
+}
+
+.icon-play:before {
+  content: "\e789";
+}
+
+.icon-disconnect:before {
+  content: "\e787";
+}
+
+.icon-unfold:before {
+  content: "\e788";
+}
+
+.icon-connect:before {
+  content: "\e786";
+}
+
+.icon-stop:before {
+  content: "\e785";
+}
+
+.icon-more2:before {
+  content: "\e790";
+}
+
+.icon-voicepause:before {
+  content: "\e792";
+}
+
+.icon-voiceplay:before {
+  content: "\e793";
+}
+
