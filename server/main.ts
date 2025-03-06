@@ -79,31 +79,16 @@ serve(async (req) => {
     });
   }
 
-  // 处理/app路径的请求
-  if (url.pathname === "/app" || url.pathname === "/app/") {
-    return serveDir(req, {
-      fsRoot: "public/app",
-      urlRoot: "app",
-      showDirListing: true,
-      enableCors: true,
-    });
-  }
-
-  // 处理/app/assets路径的请求
-  if (url.pathname.startsWith("/assets/")) {
-    return serveDir(req, {
-      fsRoot: "public/app",
+  // 处理所有静态文件请求
+  try {
+    return await serveDir(req, {
+      fsRoot: "public",
       urlRoot: "",
-      showDirListing: true,
+      showDirListing: false,
       enableCors: true,
     });
+  } catch (e) {
+    console.error("Error serving static files:", e);
+    return new Response("Not Found", { status: 404 });
   }
-
-  // 其他静态文件请求
-  return serveDir(req, {
-    fsRoot: "public",
-    urlRoot: "",
-    showDirListing: true,
-    enableCors: true,
-  });
 }, { port }); 
