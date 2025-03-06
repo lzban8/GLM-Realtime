@@ -1,4 +1,4 @@
-import { serve } from "http/server.ts";
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { WebSocketClient } from "./websocket/client.ts";
 
 // 添加调试日志
