@@ -79,39 +79,19 @@ serve(async (req) => {
     });
   }
 
-  // 处理/app路径
-  if (url.pathname === "/app" || url.pathname === "/app/") {
-    const indexHtml = await Deno.readFile("public/app/index.html");
-    return new Response(indexHtml, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-      },
-    });
-  }
-
-  // 处理静态资源
-  if (url.pathname.startsWith("/app/")) {
-    try {
-      const filePath = url.pathname.replace("/app/", "");
-      const file = await Deno.readFile(`public/app/${filePath}`);
-      const contentType = getContentType(filePath);
-      return new Response(file, {
-        headers: {
-          "Content-Type": contentType,
-        },
-      });
-    } catch (e) {
-      console.error("Error serving static file:", e);
-    }
-  }
-
   // 处理根路径重定向
   if (url.pathname === "/") {
     return Response.redirect(`${url.origin}/app/`, 301);
   }
 
-  // 默认返回404
-  return new Response("Not Found", { status: 404 });
+  // 处理所有静态文件请求
+  return await serveDir(req, {
+    fsRoot: "public",
+    urlRoot: "",
+    showDirListing: false,
+    enableCors: true,
+    quiet: false, // 启用日志输出
+  });
 }, { port });
 
 // 获取文件的Content-Type
