@@ -6,32 +6,6 @@
       label-width="200px"
       class="operator-panel__ruleForm"
     >
-      <el-form-item>
-        <template #label>
-          <div class="flex flex-x-start flex-y-center">
-            <h4>APIKEY</h4>
-            <el-tooltip
-              effect="light"
-              :visible-arrow="false"
-              popper-class="popper-class-text-tip"
-              placement="right"
-            >
-              <!-- 使用具名插槽传递内容 -->
-              <template #content>
-                用于调用模型的APIKEY，请前往
-                <a
-                  href="https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys"
-                  target="_blank"
-                  >开放平台</a
-                >
-                申请
-              </template>
-              <i class="iconfont icon-info1 pointer"></i>
-            </el-tooltip>
-          </div>
-        </template>
-        <el-input v-model="apiKey" placeholder="请输入APIKEY" :disabled="isConnected" />
-      </el-form-item>
       <el-form-item label="模型" prop="media_type">
         <el-select v-model="modelId" placeholder="请选择" :disabled="isConnected">
           <el-option
@@ -178,16 +152,9 @@ export default {
       },
       immediate: true,
     },
-    apiKey: {
-      handler(val) {
-        this.$emit("onApiKeyChange", val);
-      },
-      immediate: true,
-    },
   },
   data() {
     return {
-      apiKey: "", // api key
       RESPONSE_TYPE, // 响应类型
       showTools: [TOOLS_TYPE.WEB_SEARCH],
       modelId: "glm_realtime", // 模型id

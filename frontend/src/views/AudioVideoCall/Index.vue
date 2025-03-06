@@ -152,11 +152,7 @@ export default {
     },
     // 初始化websocket连接
     openWS(mediaType = MEDIA_TYPE.AUDIO) {
-      // 创建 SockJS 连接
-      if (!this.apiKey) {
-        this.$message.warning("请输入APIKEY！");
-        return;
-      }
+      // 创建 WebSocket 连接
       if (this.sock && this.sock.readyState !== WebSocket.CLOSED) {
         console.log("WebSocket 连接已经打开");
         return;
@@ -164,7 +160,10 @@ export default {
       this.isConnecting = true;
       this.isConnected = false;
 
-      const url = `wss://open.bigmodel.cn/api/paas/v4/realtime?Authorization=${this.apiKey}`;
+      // 使用服务器端的 WebSocket endpoint
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = `${protocol}//${window.location.host}/ws`;
+      
       // 创建 WebSocket 连接
       this.sock = new WebSocket(url);
 
