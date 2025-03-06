@@ -56,6 +56,44 @@
           logs: []
         };
 
+        // 添加脚本加载状态检测
+        function checkScript(url) {
+          return new Promise((resolve, reject) => {
+            fetch(url)
+              .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                window.__DEBUG__.scriptStatus[url] = 'loaded';
+                log('script-check', `Script ${url} is accessible`);
+                resolve(true);
+              })
+              .catch(error => {
+                window.__DEBUG__.scriptStatus[url] = 'error';
+                log('script-error', `Failed to load ${url}: ${error.message}`);
+                reject(error);
+              });
+          });
+        }
+
+        // 检查关键脚本
+        function checkCriticalScripts() {
+          const scripts = [
+            '/app/vue-2b357e6a.js',
+            '/app/element-plus-da50bf89.js',
+            '/app/wavesurfer-71c23100.js',
+            '/app/index-c5dd9a53.js'
+          ];
+          
+          log('script-check', 'Starting critical scripts check');
+          
+          Promise.all(scripts.map(checkScript))
+            .then(() => {
+              log('script-check', 'All critical scripts are accessible');
+            })
+            .catch(error => {
+              log('script-error', 'Some critical scripts failed to load', error);
+            });
+        }
+
         function log(type, ...args) {
           const time = new Date().toISOString();
           window.__DEBUG__.logs.push({ type, time, args });
@@ -154,20 +192,8 @@
 
         // 检查脚本状态
         window.__DEBUG__.checkScripts = function() {
-          const scripts = Array.from(document.scripts);
-          scripts.forEach(script => {
-            if (!script.src) return;
-            fetch(script.src)
-              .then(response => {
-                window.__DEBUG__.scriptStatus[script.src] = response.ok ? 'loaded' : 'error';
-                updateDebugInfo();
-              })
-              .catch(error => {
-                window.__DEBUG__.scriptStatus[script.src] = 'error';
-                log('script-error', { src: script.src, error: error.message });
-                updateDebugInfo();
-              });
-          });
+          log('manual-check', 'Manual script check initiated');
+          checkCriticalScripts();
         };
 
         // 重新加载应用
@@ -241,6 +267,12 @@
           }
         };
 
+        // 在页面加载完成后自动检查脚本
+        window.addEventListener('load', () => {
+          log('page-load', 'Page loaded, checking scripts');
+          checkCriticalScripts();
+        });
+
         // 初始化完成
         log('init', 'Debug system initialized');
         
@@ -251,19 +283,23 @@
 
     <!-- 按顺序加载脚本 -->
     <script type="module" src="/app/vue-2b357e6a.js" 
-            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Vue loaded']});"
-            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Vue failed to load']});"></script>
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Vue loaded successfully']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Vue failed to load']});">
+    </script>
     
     <script type="module" src="/app/element-plus-da50bf89.js"
-            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Element Plus loaded']});"
-            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Element Plus failed to load']});"></script>
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Element Plus loaded successfully']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Element Plus failed to load']});">
+    </script>
     
     <script type="module" src="/app/wavesurfer-71c23100.js"
-            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Wavesurfer loaded']});"
-            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Wavesurfer failed to load']});"></script>
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Wavesurfer loaded successfully']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Wavesurfer failed to load']});">
+    </script>
     
     <script type="module" src="/app/index-c5dd9a53.js"
-            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Main app loaded']});"
-            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Main app failed to load']});"></script>
+            onload="window.__DEBUG__.scriptStatus[this.src] = 'loaded'; window.__DEBUG__.logs.push({type: 'script-load', time: new Date().toISOString(), args: ['Main app loaded successfully']});"
+            onerror="window.__DEBUG__.scriptStatus[this.src] = 'error'; window.__DEBUG__.logs.push({type: 'script-error', time: new Date().toISOString(), args: ['Main app failed to load']});">
+    </script>
   </body>
 </html> 
