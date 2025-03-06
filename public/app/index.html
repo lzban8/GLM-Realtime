@@ -159,6 +159,23 @@
             status: window.__DEBUG__.scriptStatus[script.src] || 'pending'
           }));
 
+          // 安全的JSON序列化，处理循环引用
+          function safeStringify(obj) {
+            const seen = new WeakSet();
+            return JSON.stringify(obj, (key, value) => {
+              if (key === 'vnode' || key === 'parent' || key === 'component') {
+                return '[Circular]';
+              }
+              if (typeof value === 'object' && value !== null) {
+                if (seen.has(value)) {
+                  return '[Circular]';
+                }
+                seen.add(value);
+              }
+              return value;
+            }, 2);
+          }
+
           const vueInfo = {
             Vue: typeof window.Vue !== 'undefined',
             createApp: typeof window.Vue?.createApp === 'function',
@@ -168,46 +185,55 @@
             appContent: document.getElementById('app')?.innerHTML || 'empty'
           };
 
-          container.innerHTML = `
-            <div style="margin-bottom: 10px;">
-              <div>Path: ${window.location.pathname}</div>
-              <div>Time: ${new Date().toISOString()}</div>
-              <div>Vue Status:</div>
-              <pre>${JSON.stringify(vueInfo, null, 2)}</pre>
-              <div>
-                <button class="debug-button" onclick="window.DEBUG_ACTIONS.hardReload()">Hard Reload</button>
-                <button class="debug-button" onclick="window.DEBUG_ACTIONS.checkScripts()">Check Scripts</button>
-                <button class="debug-button" onclick="window.DEBUG_ACTIONS.reloadApp()">Reload App</button>
-              </div>
-            </div>
-            <div style="margin: 10px 0;">
-              <strong>Scripts:</strong>
-              ${scripts.map(script => `
-                <div class="script-status ${script.status === 'error' ? 'error' : script.status === 'loaded' ? 'success' : ''}">
-                  ${script.src} - ${script.type} (${script.status})
+          try {
+            container.innerHTML = `
+              <div style="margin-bottom: 10px;">
+                <div>Path: ${window.location.pathname}</div>
+                <div>Time: ${new Date().toISOString()}</div>
+                <div>Vue Status:</div>
+                <pre>${safeStringify(vueInfo)}</pre>
+                <div>
+                  <button class="debug-button" onclick="window.DEBUG_ACTIONS.hardReload()">Hard Reload</button>
+                  <button class="debug-button" onclick="window.DEBUG_ACTIONS.checkScripts()">Check Scripts</button>
+                  <button class="debug-button" onclick="window.DEBUG_ACTIONS.reloadApp()">Reload App</button>
                 </div>
-              `).join('')}
-            </div>
-            ${window.__DEBUG__.errors.length > 0 ? `
+              </div>
               <div style="margin: 10px 0;">
-                <strong>Errors (${window.__DEBUG__.errors.length}):</strong>
-                ${window.__DEBUG__.errors.map(error => `
-                  <div class="script-status error">
-                    <div>Message: ${error.msg}</div>
-                    ${error.url ? `<div>URL: ${error.url}:${error.line}</div>` : ''}
-                    ${error.stack ? `<pre>${error.stack}</pre>` : ''}
-                    ${error.detail ? `<div>Detail: ${error.detail}</div>` : ''}
+                <strong>Scripts:</strong>
+                ${scripts.map(script => `
+                  <div class="script-status ${script.status === 'error' ? 'error' : script.status === 'loaded' ? 'success' : ''}">
+                    ${script.src} - ${script.type} (${script.status})
                   </div>
                 `).join('')}
               </div>
-            ` : ''}
-            <div style="margin: 10px 0;">
-              <strong>Logs:</strong>
-              <pre>${window.__DEBUG__.logs.map(log => 
-                `[${log.time}] [${log.type}] ${JSON.stringify(log.args)}`
-              ).join('\n')}</pre>
-            </div>
-          `;
+              ${window.__DEBUG__.errors.length > 0 ? `
+                <div style="margin: 10px 0;">
+                  <strong>Errors (${window.__DEBUG__.errors.length}):</strong>
+                  ${window.__DEBUG__.errors.map(error => `
+                    <div class="script-status error">
+                      <div>Message: ${error.msg}</div>
+                      ${error.url ? `<div>URL: ${error.url}:${error.line}</div>` : ''}
+                      ${error.stack ? `<pre>${error.stack}</pre>` : ''}
+                      ${error.detail ? `<div>Detail: ${error.detail}</div>` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              <div style="margin: 10px 0;">
+                <strong>Logs:</strong>
+                <pre>${window.__DEBUG__.logs.map(log => 
+                  `[${log.time}] [${log.type}] ${safeStringify(log.args)}`
+                ).join('\n')}</pre>
+              </div>
+            `;
+          } catch (e) {
+            console.error('Error updating debug info:', e);
+            container.innerHTML = `
+              <div class="script-status error">
+                Error updating debug info: ${e.message}
+              </div>
+            `;
+          }
         }
 
         // 检查脚本状态
