@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { serveDir } from "https://deno.land/std@0.208.0/http/file_server.ts";
 import { WebSocketClient } from "./websocket/client.ts";
 
 // 添加调试日志
@@ -78,11 +79,11 @@ serve(async (req) => {
     });
   }
 
-  // 默认响应
-  return new Response("GLM-Realtime Server", {
-    headers: { 
-      "Content-Type": "text/plain",
-      "Access-Control-Allow-Origin": "*",
-    },
+  // 静态文件服务
+  return serveDir(req, {
+    fsRoot: "public",
+    urlRoot: "",
+    showDirListing: true,
+    enableCors: true,
   });
 }, { port }); 
