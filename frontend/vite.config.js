@@ -34,10 +34,26 @@ export default defineConfig({
     assetsDir: '',
     rollupOptions: {
       output: {
+        manualChunks: {
+          'vue': ['vue'],
+          'element-plus': ['element-plus'],
+          'wavesurfer': ['wavesurfer.js']
+        },
         chunkFileNames: '[name]-[hash].js',
         entryFileNames: '[name]-[hash].js',
         assetFileNames: '[name]-[hash].[ext]'
       }
+    },
+    target: 'es2015',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: false
+      }
     }
+  },
+  optimizeDeps: {
+    include: ['vue', 'element-plus', 'wavesurfer.js']
   }
 });
