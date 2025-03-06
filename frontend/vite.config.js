@@ -35,7 +35,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vue': ['vue'],
+          'vue': ['vue', '@vue/runtime-dom'],
           'element-plus': ['element-plus'],
           'wavesurfer': ['wavesurfer.js']
         },
@@ -55,5 +55,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['vue', 'element-plus', 'wavesurfer.js']
+  },
+  define: {
+    __VUE_OPTIONS_API__: true,
+    __VUE_PROD_DEVTOOLS__: false
   }
 });
