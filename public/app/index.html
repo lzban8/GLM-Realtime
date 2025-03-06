@@ -46,6 +46,26 @@
     <div id="app"></div>
 
     <script>
+      // 全局调试函数
+      window.DEBUG_ACTIONS = {
+        hardReload: function() {
+          console.log('Hard reload triggered');
+          location.reload(true);
+        },
+        checkScripts: function() {
+          console.log('Check scripts triggered');
+          if (window.__DEBUG__ && window.__DEBUG__.checkScripts) {
+            window.__DEBUG__.checkScripts();
+          }
+        },
+        reloadApp: function() {
+          console.log('Reload app triggered');
+          if (window.__DEBUG__ && window.__DEBUG__.reloadApp) {
+            window.__DEBUG__.reloadApp();
+          }
+        }
+      };
+
       (function() {
         console.log('Debug script starting...');
         
@@ -155,9 +175,9 @@
               <div>Vue Status:</div>
               <pre>${JSON.stringify(vueInfo, null, 2)}</pre>
               <div>
-                <button class="debug-button" onclick="location.reload(true)">Hard Reload</button>
-                <button class="debug-button" onclick="window.__DEBUG__.checkScripts()">Check Scripts</button>
-                <button class="debug-button" onclick="window.__DEBUG__.reloadApp()">Reload App</button>
+                <button class="debug-button" onclick="window.DEBUG_ACTIONS.hardReload()">Hard Reload</button>
+                <button class="debug-button" onclick="window.DEBUG_ACTIONS.checkScripts()">Check Scripts</button>
+                <button class="debug-button" onclick="window.DEBUG_ACTIONS.reloadApp()">Reload App</button>
               </div>
             </div>
             <div style="margin: 10px 0;">
